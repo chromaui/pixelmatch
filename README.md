@@ -1,5 +1,11 @@
 ## pixelmatch
 
+This is a fork by @zol, for changes see the fork's README [here](README-zol.md).
+
+Upstream README follows:
+
+---
+
 [![Build Status](https://travis-ci.org/mapbox/pixelmatch.svg?branch=master)](https://travis-ci.org/mapbox/pixelmatch)
 [![Coverage Status](https://coveralls.io/repos/mapbox/pixelmatch/badge.svg?branch=master&service=github)](https://coveralls.io/github/mapbox/pixelmatch?branch=master)
 [![](https://img.shields.io/badge/simply-awesome-brightgreen.svg)](https://github.com/mourner/projects)
