@@ -39,6 +39,9 @@ function diffTest(imgPath1, imgPath2, diffPath, options, expectedMismatch) {
                     var mismatch = match(img1.data, img2.data, diff.data, diff.width, diff.height, options);
                     var mismatch2 = match(img1.data, img2.data, null, diff.width, diff.height, options);
 
+                    // For testing
+                    // fs.writeFileSync('diff.png', PNG.sync.write(diff));
+
                     t.same(diff.data, expectedDiff.data, 'diff image');
                     t.same(mismatch, expectedMismatch, 'number of mismatched pixels');
                     t.same(mismatch, mismatch2, 'number of mismatched pixels');

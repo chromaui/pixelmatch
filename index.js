@@ -10,6 +10,8 @@ function pixelmatch(img1, img2, output, width, height, options) {
 
     var threshold = options.threshold === undefined ? 0.1 : options.threshold;
     var drawAA = options.drawAA === undefined ? true : options.drawAA;
+    var maskPixelColor = options.maskPixelColor === undefined ?
+        {r: 55, g: 255, b: 20} : options.maskPixelColor;
 
     // maximum acceptable square distance between two colors;
     // 35215 is the maximum possible value for the YIQ difference metric
@@ -39,8 +41,7 @@ function pixelmatch(img1, img2, output, width, height, options) {
                         if (!options.diffMask)
                             drawPixel(output, pos, 255, 0, 0);
                         else
-                            // since we're creating a mask, draw a white pixel
-                            drawPixel(output, pos, 255, 255, 255);
+                            drawPixel(output, pos, maskPixelColor.r, maskPixelColor.g, maskPixelColor.b);
                     diff++;
                 }
 
