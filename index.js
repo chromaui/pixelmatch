@@ -18,6 +18,12 @@ function pixelmatch(img1, img2, output, width, height, options) {
     var maxDelta = 35215 * threshold * threshold;
     var diff = 0;
 
+    function toDiff(delta) {
+        return Math.sqrt(delta/35215);
+    }
+    var diffHistogram = {}
+    var aaDiffHistogram = {}
+    
     // compare each pixel of one image against the other one
     for (var y = 0; y < height; y++) {
         for (var x = 0; x < width; x++) {
@@ -27,14 +33,27 @@ function pixelmatch(img1, img2, output, width, height, options) {
             // squared YUV distance between colors at this pixel position
             var delta = colorDelta(img1, img2, pos, pos);
 
+            var diffValue;
+            if (options.debug) {
+                diffValue = toDiff(delta);
+                diffHistogram[diffValue] = diffHistogram[diffValue] || 0;
+                diffHistogram[diffValue] += 1;
+            }
+
             // the color difference is above the threshold
             if (delta > maxDelta) {
+                
                 // check it's a real rendering difference or just anti-aliasing
                 if (!options.includeAA && (antialiased(img1, x, y, width, height, img2) ||
                                    antialiased(img2, x, y, width, height, img1))) {
                     // one of the pixels is anti-aliasing; draw as yellow and do not count as difference
                     if (output && drawAA) drawPixel(output, pos, 255, 255, 0);
 
+                    if (options.debug) {
+                        aaDiffHistogram[diffValue] = aaDiffHistogram[diffValue] || 0;
+                        aaDiffHistogram[diffValue] += 1;
+                    }
+        
                 } else {
                     // found substantial difference not caused by anti-aliasing; draw it as red
                     if (output)
@@ -53,6 +72,13 @@ function pixelmatch(img1, img2, output, width, height, options) {
                 }
             }
         }
+    }
+
+    if (options.debug) {
+        const diffs = Object.keys(diffHistogram).sort();
+        console.log(`Pixels 0 difference: ${100 *diffHistogram[0]/(height*width)}%`)
+        diffs.forEach(d => d > threshold && console.log(`${d}: ${diffHistogram[d] - (aaDiffHistogram[d] || 0)} (${diffHistogram[d]})`))
+
     }
 
     // return the number of different pixels
