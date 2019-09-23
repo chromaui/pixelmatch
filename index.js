@@ -77,8 +77,9 @@ function pixelmatch(img1, img2, output, width, height, options) {
     if (options.debug) {
         const diffs = Object.keys(diffHistogram).sort();
         console.log(`Pixels 0 difference: ${100 *diffHistogram[0]/(height*width)}%`)
-        diffs.forEach(d => d > threshold && console.log(`${d}: ${diffHistogram[d] - (aaDiffHistogram[d] || 0)} (${diffHistogram[d]})`))
-
+        // diffs.forEach(d => d > threshold && console.log(`${d}: ${diffHistogram[d] - (aaDiffHistogram[d] || 0)} (${diffHistogram[d]})`))
+        const largestDiff = diffs.reverse().find(d => diffHistogram[d] - aaDiffHistogram[d] > 0)
+        console.log(`Largest non-antialiased diff ${largestDiff}`)
     }
 
     // return the number of different pixels
