@@ -66,6 +66,8 @@ function pixelmatch(img1, img2, output, width, height, options) {
                     // note that we do not include such pixels in a mask
                     if (output && !options.diffMask) drawPixel(output, pos, aaR, aaG, aaB);
 
+                } else if (imageBlurred(img1, img2, x, y, width, height, options.threshold)) {
+                    if (output) drawPixel(output, pos, 0, 255, 0);
                 } else {
                     // found substantial difference not caused by anti-aliasing; draw it as red
                     if (output) drawPixel(output, pos, diffR, diffG, diffB, 255 * (options.diffMaskDebug ? Math.sqrt(delta / 35215) : 1));
@@ -167,20 +169,85 @@ function hasManySiblings(img, x1, y1, width, height) {
     return false;
 }
 
+function imageBlurred(img1, img2, x1, y1, width, height, threshold) {
+    // Do we think the pixel is inside an image?
+    if (!hasManyChangedSiblings(img1, img2, x1, y1, width, height)) return false;
+
+    // Do all 2x2 squares containing the pixel average to within the threshold?
+    const x0 = Math.max(x1 - 1, 0);
+    const y0 = Math.max(y1 - 1, 0);
+    const x2 = Math.min(x1 + 1, width - 1);
+    const y2 = Math.min(y1 + 1, height - 1);
+    for (let x = x0; x < x2; x++) {
+        for (let y = y0; y < y2; y++) {
+            if (blockDelta(img1, img2, x, y, 2, 2) > threshold) return false;
+        }
+    }
+    return true;
+}
+
+// check if a pixel's has at least 50% siblings with non-zero deltas
+function hasManyChangedSiblings(img1, img2, x1, y1, width, height) {
+    const x0 = Math.max(x1 - 1, 0);
+    const y0 = Math.max(y1 - 1, 0);
+    const x2 = Math.min(x1 + 1, width - 1);
+    const y2 = Math.min(y1 + 1, height - 1);
+
+    const total = (x2 - x0 + 1) * (y2 - y0 + 1) - 1;
+    const required = Math.floor(total / 2);
+    let checked = 0;
+    let different = 0;
+    // go through 8 adjacent pixels
+    for (let x = x0; x <= x2; x++) {
+        for (let y = y0; y <= y2; y++) {
+            if (x === x1 && y === y1) continue;
+            checked += 1;
+
+            const pos = (y * width + x) * 4;
+            if (!(img1[pos] === img2[pos] &&
+                img1[pos + 1] === img2[pos + 1] &&
+                img1[pos + 2] === img2[pos + 2] &&
+                img1[pos + 3] === img2[pos + 3])) different++;
+
+            if (different >= required) return true;
+            if (required - different > total - checked) return false;
+        }
+    }
+
+    return false;
+}
+
+// Calculate the delta of the average intensities over a block of pixels
+function blockDelta(img1, img2, x0, y0, width, height) {
+    // calculate average rgba values for each image over the block
+    let r1 = 0, g1 = 0, b1 = 0, a1 = 0, r2 = 0, g2 = 0, b2 = 0, a2 = 0;
+    for (let x = x0; x <= x0 + width; x++) {
+        for (let y = y0; y <= y0 + height; y++) {
+            const pos = (y * width + x) * 4;
+            r1 += img1[pos];
+            r2 += img2[pos];
+            g1 += img1[pos + 1];
+            g2 += img2[pos + 1];
+            b1 += img1[pos + 2];
+            b2 += img2[pos + 2];
+            a1 += img1[pos + 3];
+            a2 += img2[pos + 3];
+        }
+    }
+
+    const s = width * height;
+    return colorDeltaRGBA(r1 / s, g1 / s, b1 / s, a1 / s, r2 / s, g2 / s, b2 / s, a2 / s);
+}
+
 // calculate color difference according to the paper "Measuring perceived color difference
 // using YIQ NTSC transmission color space in mobile applications" by Y. Kotsarenko and F. Ramos
 
 function colorDelta(img1, img2, k, m, yOnly) {
-    let r1 = img1[k + 0];
-    let g1 = img1[k + 1];
-    let b1 = img1[k + 2];
-    let a1 = img1[k + 3];
+    return colorDeltaRGBA(img1[k + 0], img1[k + 1], img1[k + 2], img1[k + 3],
+        img2[m + 0], img2[m + 1], img2[m + 2], img2[m + 3], yOnly);
+}
 
-    let r2 = img2[m + 0];
-    let g2 = img2[m + 1];
-    let b2 = img2[m + 2];
-    let a2 = img2[m + 3];
-
+function colorDeltaRGBA(r1, g1, b1, a1, r2, g2, b2, a2, yOnly) {
     if (a1 === a2 && r1 === r2 && g1 === g2 && b1 === b2) return 0;
 
     if (a1 < 255) {
@@ -221,7 +288,6 @@ function drawPixel(output, pos, r, g, b, alpha = 255) {
     output[pos + 1] = g;
     output[pos + 2] = b;
     output[pos + 3] = alpha;
-    console.log(alpha)
 }
 
 function drawGrayPixel(img, i, alpha, output) {

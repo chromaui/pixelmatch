@@ -17,7 +17,6 @@ const options = {
     threshold: +threshold,
     includeAA: includeAA !== undefined && includeAA !== 'false',
     diffMask: true,
-    diffMaskDebug: true,
 };
 
 const img1 = PNG.sync.read(fs.readFileSync(img1Path));
