@@ -59,6 +59,9 @@ function pixelmatch(img1, img2, output, width, height, options) {
 
             // the color difference is above the threshold
             if (delta > maxDelta) {
+                console.log(`${x}x${y}: delta: ${delta}`)
+                console.log(`${x}x${y}(${pos}): ${img1[pos]},${img1[pos+1]},${img1[pos+2]},${img1[pos+3]} - ${img2[pos]},${img2[pos+1]},${img2[pos+2]},${img2[pos+3]}`)
+
                 // check it's a real rendering difference or just anti-aliasing
                 if (!options.includeAA && (antialiased(img1, x, y, width, height, img2) ||
                                            antialiased(img2, x, y, width, height, img1))) {
@@ -66,7 +69,7 @@ function pixelmatch(img1, img2, output, width, height, options) {
                     // note that we do not include such pixels in a mask
                     if (output && !options.diffMask) drawPixel(output, pos, aaR, aaG, aaB);
 
-                } else if (imageBlurred(img1, img2, x, y, width, height, options.threshold)) {
+                } else if (imageBlurred(img1, img2, x, y, width, height, maxDelta)) {
                     if (output) drawPixel(output, pos, 0, 255, 0);
                 } else {
                     // found substantial difference not caused by anti-aliasing; draw it as red
@@ -169,7 +172,8 @@ function hasManySiblings(img, x1, y1, width, height) {
     return false;
 }
 
-function imageBlurred(img1, img2, x1, y1, width, height, threshold) {
+function imageBlurred(img1, img2, x1, y1, width, height, maxDelta) {
+    console.log(`checking ${x1}, ${y1}: hasMCS = ${hasManyChangedSiblings(img1, img2, x1, y1, width, height)}`)
     // Do we think the pixel is inside an image?
     if (!hasManyChangedSiblings(img1, img2, x1, y1, width, height)) return false;
 
@@ -180,7 +184,7 @@ function imageBlurred(img1, img2, x1, y1, width, height, threshold) {
     const y2 = Math.min(y1 + 1, height - 1);
     for (let x = x0; x < x2; x++) {
         for (let y = y0; y < y2; y++) {
-            if (blockDelta(img1, img2, x, y, 2, 2) > threshold) return false;
+            if (blockDelta(img1, img2, x, y, x + 1, y + 1, width, height) > maxDelta) return false;
         }
     }
     return true;
@@ -218,12 +222,13 @@ function hasManyChangedSiblings(img1, img2, x1, y1, width, height) {
 }
 
 // Calculate the delta of the average intensities over a block of pixels
-function blockDelta(img1, img2, x0, y0, width, height) {
+function blockDelta(img1, img2, x0, y0, x1, y1, width, height) {
     // calculate average rgba values for each image over the block
     let r1 = 0, g1 = 0, b1 = 0, a1 = 0, r2 = 0, g2 = 0, b2 = 0, a2 = 0;
-    for (let x = x0; x <= x0 + width; x++) {
-        for (let y = y0; y <= y0 + height; y++) {
+    for (let x = x0; x <= x1; x++) {
+        for (let y = y0; y <= y1; y++) {
             const pos = (y * width + x) * 4;
+            console.log(`${x}x${y}(${pos}): ${img1[pos]},${img1[pos+1]},${img1[pos+2]},${img1[pos+3]} - ${img2[pos]},${img2[pos+1]},${img2[pos+2]},${img2[pos+3]}`)
             r1 += img1[pos];
             r2 += img2[pos];
             g1 += img1[pos + 1];
@@ -235,7 +240,8 @@ function blockDelta(img1, img2, x0, y0, width, height) {
         }
     }
 
-    const s = width * height;
+    const s = (x1-x0+1) * (y1-y0+1);
+    console.log(r1 / s, g1 / s, b1 / s, a1 / s, r2 / s, g2 / s, b2 / s, a2 / s)
     return colorDeltaRGBA(r1 / s, g1 / s, b1 / s, a1 / s, r2 / s, g2 / s, b2 / s, a2 / s);
 }
 

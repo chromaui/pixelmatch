@@ -3,6 +3,8 @@
 
 'use strict';
 
+console.log('here')
+
 const PNG = require('pngjs').PNG;
 const fs = require('fs');
 const match = require('../.');
@@ -16,7 +18,6 @@ const [,, img1Path, img2Path, diffPath, threshold, includeAA] = process.argv;
 const options = {
     threshold: +threshold,
     includeAA: includeAA !== undefined && includeAA !== 'false',
-    diffMask: true,
 };
 
 const img1 = PNG.sync.read(fs.readFileSync(img1Path));
