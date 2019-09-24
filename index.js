@@ -7,8 +7,9 @@ const defaultOptions = {
     includeAA: false,       // whether to skip anti-aliasing detection
     alpha: 0.1,             // opacity of original image in diff ouput
     aaColor: [255, 255, 0], // color of anti-aliased pixels in diff output
-    diffColor: [255, 0, 0],  // color of different pixels in diff output
-    diffMask: false         // draw the diff over a transparent background (a mask)
+    diffColor: [255, 0, 0], // color of different pixels in diff output
+    diffMask: false,        // draw the diff over a transparent background (a mask)
+    diffMaskDebug: false    // shade the pixels in the mask based on how different they are
 };
 
 function pixelmatch(img1, img2, output, width, height, options) {
@@ -67,7 +68,7 @@ function pixelmatch(img1, img2, output, width, height, options) {
 
                 } else {
                     // found substantial difference not caused by anti-aliasing; draw it as red
-                    if (output) drawPixel(output, pos, diffR, diffG, diffB);
+                    if (output) drawPixel(output, pos, diffR, diffG, diffB, 255 * (options.diffMaskDebug ? Math.sqrt(delta / 35215) : 1));
                     diff++;
                 }
 
@@ -215,11 +216,12 @@ function blend(c, a) {
     return 255 + (c - 255) * a;
 }
 
-function drawPixel(output, pos, r, g, b) {
+function drawPixel(output, pos, r, g, b, alpha = 255) {
     output[pos + 0] = r;
     output[pos + 1] = g;
     output[pos + 2] = b;
-    output[pos + 3] = 255;
+    output[pos + 3] = alpha;
+    console.log(alpha)
 }
 
 function drawGrayPixel(img, i, alpha, output) {

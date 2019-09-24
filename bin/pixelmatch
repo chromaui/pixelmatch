@@ -15,7 +15,9 @@ if (process.argv.length < 4) {
 const [,, img1Path, img2Path, diffPath, threshold, includeAA] = process.argv;
 const options = {
     threshold: +threshold,
-    includeAA: includeAA !== undefined && includeAA !== 'false'
+    includeAA: includeAA !== undefined && includeAA !== 'false',
+    diffMask: true,
+    diffMaskDebug: true,
 };
 
 const img1 = PNG.sync.read(fs.readFileSync(img1Path));
